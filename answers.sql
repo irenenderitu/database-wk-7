@@ -1,4 +1,4 @@
-
+-- Question 1 Achieving 1NF
 SET SESSION sql_mode = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION';
 
 -- Recursive CTE to split comma-separated product list into separate rows
@@ -34,3 +34,47 @@ SELECT
     CustomerName,
     TRIM(Product) AS Product                                        -- Clean spaces
 FROM split_products;
+
+-- Question 2 Achieving 2NF 
+
+-- ============================================
+-- Step 1: Create a new table 'Orders' to store
+-- customer info without redundancy (2NF)
+-- ============================================
+
+CREATE TABLE Orders (
+    OrderID INT PRIMARY KEY,
+    CustomerName VARCHAR(100)
+);
+
+-- Insert DISTINCT OrderID and CustomerName
+-- This removes the partial dependency from the original table
+INSERT INTO Orders (OrderID, CustomerName)
+SELECT DISTINCT OrderID, CustomerName
+FROM OrderDetails;
+
+-- ============================================
+-- Step 2: Create OrderItems table to store
+-- the products for each order (fully depends
+-- on the composite key: OrderID + Product)
+-- ============================================
+
+CREATE TABLE OrderItems (
+    OrderID INT,
+    Product VARCHAR(100),
+    Quantity INT,
+    PRIMARY KEY (OrderID, Product),   -- Composite key
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID)
+);
+
+-- Insert product-level data from the original table
+INSERT INTO OrderItems (OrderID, Product, Quantity)
+SELECT OrderID, Product, Quantity
+FROM OrderDetails;
+
+-- ============================================
+-- The data is now in 2NF:
+-- Orders: (OrderID → CustomerName)
+-- OrderItems: (OrderID, Product → Quantity)
+-- ============================================
+
